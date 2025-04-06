@@ -53,3 +53,5 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 /.vs
+/devops/terraform/.terraform
+/devops/terraform/.terraform.lock.hcl
