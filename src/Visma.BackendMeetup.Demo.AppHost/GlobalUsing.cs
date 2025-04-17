@@ -1,0 +1,1 @@
+﻿global using static Visma.BackendMeetup.Demo.AppHost.Constants.ProgramConstants;

@@ -1,0 +1,24 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    },
+    "logLevel": {
+      "default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "extensions": {
+    "serviceBus": {
+      "prefetchCount": 10,
+      "maxAutoLockRenewalDuration": "00:05:00",
+      "maxConcurrentCalls": 16,
+      "autoCompleteMessages": true
+    }
+  }
+}

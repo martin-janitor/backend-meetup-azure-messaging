@@ -1,10 +1,17 @@
+using Visma.BackendMeetup.Demo.AppHost.Extensions;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
-var apiService = builder.AddProject<Projects.Visma_BackendMeetup_Demo_ApiService>("apiservice");
+builder.Configuration.BuildAppConfiguration();
 
-builder.AddProject<Projects.Visma_BackendMeetup_Demo_Web>("webfrontend")
-    .WithExternalHttpEndpoints()
-    .WithReference(apiService)
-    .WaitFor(apiService);
+var azureStorage = builder.BuildAzureStorage();
+
+var mockList = builder.BuildMockServices();
+
+
+builder.BuildP2DIFunctionApp(
+    azureStorage: azureStorage,
+    configuration: builder.Configuration,
+    mockResourceList: mockList);
 
 builder.Build().Run();

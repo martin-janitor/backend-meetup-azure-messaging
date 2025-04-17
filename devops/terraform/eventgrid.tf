@@ -16,3 +16,10 @@ resource "azurerm_eventgrid_event_subscription" "to_eventhub" {
   scope        = azurerm_eventgrid_topic.eventgrid_topic.id
   eventhub_endpoint_id = azurerm_eventhub.eventhub1.id
 }
+
+# Role assignment for EventGrid topic
+resource "azurerm_role_assignment" "eventgrid_sender" {
+  scope                = azurerm_eventgrid_topic.eventgrid_topic.id
+  role_definition_name = "EventGrid Data Sender"
+  principal_id         = "1a46de39-1478-497c-9f6b-ae2b586b4c9d"
+}

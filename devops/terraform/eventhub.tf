@@ -12,3 +12,10 @@ resource "azurerm_eventhub" "eventhub1" {
   partition_count     = 2
   message_retention   = 1
 }
+
+# Role assignment for EventHub namespace
+resource "azurerm_role_assignment" "eventhub_sender_receiver" {
+  scope                = azurerm_eventhub_namespace.eventhub_ns.id
+  role_definition_name = "Azure Event Hubs Data Owner"
+  principal_id         = "1a46de39-1478-497c-9f6b-ae2b586b4c9d"
+}

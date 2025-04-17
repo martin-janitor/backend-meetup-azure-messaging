@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Visma.BackendMeetup.Demo.FunctionApp": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7057",
+      "launchBrowser": false
+    }
+  }
+}

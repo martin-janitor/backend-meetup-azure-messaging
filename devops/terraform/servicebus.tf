@@ -39,3 +39,16 @@ resource "azurerm_servicebus_subscription" "subscription2" {
   lock_duration       = "PT5M"
   requires_session    = true
 }
+
+# Role assignments for Service Bus namespaces
+resource "azurerm_role_assignment" "servicebus1_sender_receiver" {
+  scope                = azurerm_servicebus_namespace.servicebus1.id
+  role_definition_name = "Azure Service Bus Data Owner"
+  principal_id         = "1a46de39-1478-497c-9f6b-ae2b586b4c9d"
+}
+
+resource "azurerm_role_assignment" "servicebus2_sender_receiver" {
+  scope                = azurerm_servicebus_namespace.servicebus2.id
+  role_definition_name = "Azure Service Bus Data Owner"
+  principal_id         = "1a46de39-1478-497c-9f6b-ae2b586b4c9d"
+}
