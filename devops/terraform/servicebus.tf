@@ -1,14 +1,14 @@
 resource "azurerm_servicebus_namespace" "servicebus1" {
-  name                = local.servicebus1_name
+  name                = local.sb1_name
   location            = local.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = azurerm_resource_group.messaging_rg.name
   sku                 = "Standard"
 }
 
 resource "azurerm_servicebus_namespace" "servicebus2" {
-  name                = local.servicebus2_name
+  name                = local.sb2_name
   location            = local.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = azurerm_resource_group.messaging_rg.name
   sku                 = "Standard"
 }
 
@@ -25,7 +25,7 @@ resource "azurerm_servicebus_topic" "topic2" {
 }
 
 resource "azurerm_servicebus_subscription" "subscription1" {
-  name                = local.subscription1_name
+  name                = local.sub1_name
   topic_id            = azurerm_servicebus_topic.topic1.id
   max_delivery_count  = 10
   lock_duration       = "PT5M"
@@ -33,7 +33,7 @@ resource "azurerm_servicebus_subscription" "subscription1" {
 }
 
 resource "azurerm_servicebus_subscription" "subscription2" {
-  name                = local.subscription2_name
+  name                = local.sub2_name
   topic_id            = azurerm_servicebus_topic.topic2.id
   max_delivery_count  = 10
   lock_duration       = "PT5M"

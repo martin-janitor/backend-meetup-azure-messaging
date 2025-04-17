@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35913.81 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visma.BackendMeetup.Demo.AppHost", "Visma.BackendMeetup.Demo.AppHost\Visma.BackendMeetup.Demo.AppHost.csproj", "{4C2D5560-EC04-441E-B2A8-026C5A795F88}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visma.BackendMeetup.Demo.ServiceDefaults", "Visma.BackendMeetup.Demo.ServiceDefaults\Visma.BackendMeetup.Demo.ServiceDefaults.csproj", "{C732AAE2-6A1C-A2DC-5FF3-74153E3CAC13}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Visma.BackendMeetup.Demo.ApiService", "Visma.BackendMeetup.Demo.ApiService\Visma.BackendMeetup.Demo.ApiService.csproj", "{458A338D-5E5D-BD86-E5CC-9D069AC320D0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C2D5560-EC04-441E-B2A8-026C5A795F88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C2D5560-EC04-441E-B2A8-026C5A795F88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C2D5560-EC04-441E-B2A8-026C5A795F88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C2D5560-EC04-441E-B2A8-026C5A795F88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C732AAE2-6A1C-A2DC-5FF3-74153E3CAC13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C732AAE2-6A1C-A2DC-5FF3-74153E3CAC13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C732AAE2-6A1C-A2DC-5FF3-74153E3CAC13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C732AAE2-6A1C-A2DC-5FF3-74153E3CAC13}.Release|Any CPU.Build.0 = Release|Any CPU
+		{458A338D-5E5D-BD86-E5CC-9D069AC320D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{458A338D-5E5D-BD86-E5CC-9D069AC320D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{458A338D-5E5D-BD86-E5CC-9D069AC320D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{458A338D-5E5D-BD86-E5CC-9D069AC320D0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D027AA79-0258-4E72-94BE-C209B7C9D1AB}
+	EndGlobalSection
+EndGlobal
