@@ -13,4 +13,9 @@ public class EventHubOptions
     /// The name of the Event Hub
     /// </summary>
     public string Name { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// The consumer group to use when reading from Event Hub
+    /// </summary>
+    public string ConsumerGroup { get; set; } = "$Default";
 }

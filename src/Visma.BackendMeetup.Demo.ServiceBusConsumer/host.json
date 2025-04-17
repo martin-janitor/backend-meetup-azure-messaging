@@ -1,52 +1,45 @@
 {
-  "version": "2.0",
-  "logging": {
-    "applicationInsights": {
-      "samplingSettings": {
+    
+    "version": "2.0",
+    "logging": {
+      "applicationInsights": {
+        "samplingSettings": {
+          "isEnabled": true,
+          "excludedTypes": "Request"
+        }
+      },
+      "logLevel": {
+        "default": "Information",
+        "Host": "Information",
+        "Host.General": "Information",
+        "Host.Aggregator": "Information",
+        "Host.Results": "Information",
+        "Host.Triggers": "Information",
+        "Host.Triggers.ServiceBus": "Information",
+        "Function": "Information",
+        "Function.ProcessTopicMessage": "Information",
+        "Microsoft": "Information",
+        "Microsoft.Azure": "Information",
+        "Microsoft.Azure.WebJobs": "Information",
+        "Microsoft.Azure.Functions": "Information",
+        "Azure": "Information",
+        "Worker": "Information",
+        "Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions": "Information",
+        "Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions.ServiceBusTopicTriggerFunction": "Information"
+      },
+      "console": {
         "isEnabled": true,
-        "excludedTypes": "Request"
+        "DisableColors": false
+      },
+      "fileLoggingMode": "never"
+    },
+    "extensions": {
+      "serviceBus": {
+        "prefetchCount": 1,
+        "maxAutoLockRenewalDuration": "00:05:00",
+        "maxConcurrentCalls": 1,
+        "autoCompleteMessages": true,
+        "maxConcurrentSessions": 1
       }
-    },
-    "logLevel": {
-      "default": "Error",
-      "Host": "Error",
-      "Host.General": "Error",
-      "Host.Aggregator": "Error",
-      "Host.Results": "Error",
-      "Host.Triggers": "Error",
-      "Host.Triggers.ServiceBus": "Error",
-      "Function": "Warning",
-      "Function.ProcessTopicMessage": "Information",
-      "Microsoft": "Error",
-      "Microsoft.Azure": "Error",
-      "Microsoft.Azure.WebJobs": "Error",
-      "Microsoft.Azure.Functions": "Error",
-      "Azure": "Error",
-      "Worker": "Error",
-      "Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions": "Information",
-      "Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions.ServiceBusTopicTriggerFunction": "Information"
-    },
-    "console": {
-      "isEnabled": true,
-      "DisableColors": false
-    },
-    "fileLoggingMode": "never"
-  },
-  "extensions": {
-    "serviceBus": {
-      "prefetchCount": 10,
-      "maxAutoLockRenewalDuration": "00:05:00",
-      "maxConcurrentCalls": 1,
-      "autoCompleteMessages": true
     }
-  },
-  "suppressionFilter": {
-    "categories": [
-      "Host.Results",
-      "Host.Triggers",
-      "Host.Triggers.ServiceBus",
-      "Host.Aggregator"
-    ],
-    "logLevel": "Error"
   }
-}

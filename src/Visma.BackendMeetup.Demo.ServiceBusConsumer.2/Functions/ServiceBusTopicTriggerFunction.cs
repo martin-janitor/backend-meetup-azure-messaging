@@ -5,7 +5,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Visma.BackendMeetup.Demo.Models;
 
-namespace Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions;
+namespace Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions.Second;
 
 public class ServiceBusTopicTriggerFunction
 {
@@ -22,7 +22,7 @@ public class ServiceBusTopicTriggerFunction
             "%ServiceBusTopic%",
             "%ServiceBusSubscription%",
             IsSessionsEnabled = true,
-            Connection = "ServiceBusConnection")] 
+            Connection = "ServiceBusConnection")]
             ServiceBusReceivedMessage message)
     {
         try
@@ -32,9 +32,9 @@ public class ServiceBusTopicTriggerFunction
             // Extract message body from ServiceBusReceivedMessage
             var messageBodyBytes = message.Body.ToArray();
             var messageBodyString = Encoding.UTF8.GetString(messageBodyBytes);
-            
+
             _logger.LogInformation($"Message body content: {messageBodyString}");
-          
+           
 
             // Deserialize message body to MessageBody
             var messageBody = JsonSerializer.Deserialize<MessageBody>(messageBodyString);
@@ -42,8 +42,8 @@ public class ServiceBusTopicTriggerFunction
             {
                 _logger.LogWarning("Received message with no message body or invalid format");
                 return;
-            }
-                        
+            }            
+
             // Log key details from the message
             _logger.LogInformation($"Message details: Subject: {messageBody.Subject}, " +
                                  $"Recipient: {messageBody.Recipient}");
@@ -79,12 +79,12 @@ public class ServiceBusTopicTriggerFunction
         {
             // Process the actual message content
             _logger.LogInformation($"Processing message content: {messageBody.Content}");
-            
+
             if (!string.IsNullOrEmpty(messageBody.Subject))
             {
                 _logger.LogInformation($"Message subject: {messageBody.Subject}");
             }
-            
+
             if (!string.IsNullOrEmpty(messageBody.Recipient))
             {
                 _logger.LogInformation($"Message recipient: {messageBody.Recipient}");

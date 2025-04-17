@@ -6,7 +6,7 @@ locals {
   topic1_name        = "topic1-backend-meetup"
   topic2_name        = "topic2-backend-meetup"
   eh_ns_name         = "eh-ns-backend-meetup"
-  eh1_name           = "eh1-backend-meetup"
+  eh1_name           = "eh-backend-meetup-first"
   eg_topic_name      = "eg-topic-backend-meetup"
   sub1_name          = "sub1-backend-meetup"
   sub2_name          = "sub2-backend-meetup"

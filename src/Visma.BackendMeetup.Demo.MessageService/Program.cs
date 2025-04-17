@@ -1,9 +1,11 @@
 using Azure.Identity;
-using Microsoft.AspNetCore.Mvc;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Consumer;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Options;
 using Visma.BackendMeetup.Demo.MessageService.Configuration;
 using Visma.BackendMeetup.Demo.MessageService.Handlers;
+using Visma.BackendMeetup.Demo.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,7 +40,18 @@ builder.Services.AddAzureClients(clientBuilder =>
     if (eventHubOptions?.FullyQualifiedNamespace != null)
     {
         // Add Event Hub producer client with RBAC authentication
-        clientBuilder.AddEventHubProducerClient(eventHubOptions.FullyQualifiedNamespace, eventHubOptions.Name);
+        clientBuilder.AddEventHubProducerClientWithNamespace(eventHubOptions.FullyQualifiedNamespace, eventHubOptions.Name);
+        
+        // Add Event Hub consumer client for history retrieval
+        clientBuilder.AddClient<EventHubConsumerClient, EventHubConsumerClientOptions>((options, provider) => 
+        {
+            var eventHubOpts = provider.GetRequiredService<IOptions<EventHubOptions>>().Value;
+            return new EventHubConsumerClient(
+                eventHubOpts.ConsumerGroup, // Use consumer group from configuration
+                eventHubOpts.FullyQualifiedNamespace,
+                eventHubOpts.Name,
+                new DefaultAzureCredential());
+        });
     }
 
     if (eventGridOptions?.Endpoint != null)
@@ -55,6 +68,7 @@ builder.Services.AddAzureClients(clientBuilder =>
 builder.Services.AddSingleton<EventHubMessageHandler>();
 builder.Services.AddSingleton<EventGridMessageHandler>();
 builder.Services.AddSingleton<ServiceBusMessageHandler>();
+builder.Services.AddSingleton<EventHubHistoryHandler>();
 
 var app = builder.Build();
 
@@ -71,12 +85,12 @@ app.MapPost("/publish/eventhub", async (HttpRequest request, EventHubMessageHand
     {
         using var reader = new StreamReader(request.Body);
         var messageJson = await reader.ReadToEndAsync();
-        
+
         if (string.IsNullOrEmpty(messageJson))
         {
             return Results.BadRequest("Message body cannot be empty");
         }
-        
+
         await handler.SendMessageAsync(messageJson);
         return Results.Ok("Messages sent to Event Hub successfully");
     }
@@ -90,6 +104,26 @@ app.MapPost("/publish/eventhub", async (HttpRequest request, EventHubMessageHand
     }
 });
 
+// New endpoint to retrieve message history from Event Hub
+app.MapGet("/history/eventhub", async (int? maxMessages, string? partitionId, EventHubHistoryHandler handler) =>
+{
+    try
+    {
+        var messages = await handler.GetMessageHistoryAsync(
+            maxMessages ?? 100,
+            partitionId);
+            
+        return Results.Ok(messages);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Error retrieving message history from Event Hub: {ex.Message}");
+    }
+})
+.WithName("GetEventHubHistory")
+.Produces<List<MessageBody>>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status500InternalServerError);
+
 // Updated to handle JSON message with batch processing
 app.MapPost("/publish/eventgrid", async (HttpRequest request, EventGridMessageHandler handler) =>
 {
@@ -97,12 +131,12 @@ app.MapPost("/publish/eventgrid", async (HttpRequest request, EventGridMessageHa
     {
         using var reader = new StreamReader(request.Body);
         var messageJson = await reader.ReadToEndAsync();
-        
+
         if (string.IsNullOrEmpty(messageJson))
         {
             return Results.BadRequest("Message body cannot be empty");
         }
-        
+
         await handler.SendMessageAsync(messageJson);
         return Results.Ok("Messages sent to Event Grid successfully");
     }
@@ -123,12 +157,12 @@ app.MapPost("/publish/servicebus", async (HttpRequest request, ServiceBusMessage
     {
         using var reader = new StreamReader(request.Body);
         var messageJson = await reader.ReadToEndAsync();
-        
+
         if (string.IsNullOrEmpty(messageJson))
         {
             return Results.BadRequest("Message body cannot be empty");
         }
-        
+
         await handler.SendMessageAsync(messageJson);
         return Results.Ok("Messages sent to Service Bus successfully");
     }

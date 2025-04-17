@@ -5,7 +5,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Visma.BackendMeetup.Demo.Models;
 
-namespace Visma.BackendMeetup.Demo.EventHubConsumer.Functions;
+namespace Visma.BackendMeetup.Demo.EventHubConsumer.Functions.Second;
 
 public class EventHubTriggerFunction
 {
@@ -65,8 +65,7 @@ public class EventHubTriggerFunction
         if (messageBody.DelaySec > 0)
         {
             _logger.LogInformation($"Delaying processing for {messageBody.DelaySec}ms as specified in message properties");
-            await Task.Delay(
-                TimeSpan.FromSeconds(messageBody.DelaySec));
+            await Task.Delay(messageBody.DelaySec);
         }
 
         // Simplified processing using only MessageBody
