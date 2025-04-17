@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Visma.BackendMeetup.Demo.ServiceDefaults\Visma.BackendMeetup.Demo.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Visma.BackendMeetup.Demo.Models\Visma.BackendMeetup.Demo.Models.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,6 +13,13 @@ resource "azurerm_eventhub" "eventhub1" {
   message_retention   = 1
 }
 
+resource "azurerm_eventhub_consumer_group" "backend_meetup_consumer" {
+  name                = "backend-meetup-consumer"
+  eventhub_name       = azurerm_eventhub.eventhub1.name
+  namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
+  resource_group_name = azurerm_resource_group.messaging_rg.name
+}
+
 # Role assignment for EventHub namespace
 resource "azurerm_role_assignment" "eventhub_sender_receiver" {
   scope                = azurerm_eventhub_namespace.eventhub_ns.id

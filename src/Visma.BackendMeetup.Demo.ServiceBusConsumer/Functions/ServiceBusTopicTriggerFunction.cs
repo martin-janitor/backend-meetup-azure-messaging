@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Visma.BackendMeetup.Demo.Models;
@@ -15,38 +17,58 @@ public class ServiceBusTopicTriggerFunction
     }
 
     [Function(nameof(ProcessTopicMessage))]
-    public void ProcessTopicMessage(
+    public async Task ProcessTopicMessage(
         [ServiceBusTrigger(
             "%ServiceBusTopic%",
             "%ServiceBusSubscription%",
             IsSessionsEnabled = true,
-            Connection = "ServiceBusConnection")] string message)
+            Connection = "ServiceBusConnection")] 
+            ServiceBusReceivedMessage message)
     {
         try
         {
-            _logger.LogInformation($"Received message from Service Bus Topic");
+            _logger.LogInformation($"Received message from Service Bus Topic with SessionId: {message.SessionId}, MessageId: {message.MessageId}");
 
-            // Deserialize the message using our MessageModel class
-            var messageModel = JsonSerializer.Deserialize<MessageModel>(message);
-            if (messageModel?.MessageBody == null)
+            // Extract message body from ServiceBusReceivedMessage
+            var messageBodyBytes = message.Body.ToArray();
+            var messageBodyString = Encoding.UTF8.GetString(messageBodyBytes);
+            
+            _logger.LogInformation($"Message body content: {messageBodyString}");
+
+            // Extract custom properties from message
+            if (message.ApplicationProperties.TryGetValue("DelaySec", out var delaySec))
+            {
+                _logger.LogInformation($"Found DelaySec property in message: {delaySec}");
+            }
+
+            // Deserialize message body to MessageBody
+            var messageBody = JsonSerializer.Deserialize<MessageBody>(messageBodyString);
+            if (messageBody == null)
             {
                 _logger.LogWarning("Received message with no message body or invalid format");
                 return;
             }
 
+            // Override DelaySec from message properties if present
+            if (message.ApplicationProperties.TryGetValue("DelaySec", out var delaySecValue) && 
+                delaySecValue is int delaySecInt)
+            {
+                messageBody.DelaySec = delaySecInt;
+                _logger.LogInformation($"Using DelaySec from message properties: {messageBody.DelaySec}");
+            }
+
             // Log key details from the message
-            _logger.LogInformation($"Message details: Subject: {messageModel.MessageBody.Subject}, " +
-                                 $"Recipient: {messageModel.MessageBody.Recipient}");
+            _logger.LogInformation($"Message details: Subject: {messageBody.Subject}, " +
+                                 $"Recipient: {messageBody.Recipient}");
 
             // Process the message based on its content
-            // This is where you'd implement your specific business logic
-            ProcessMessageContent(messageModel);
+            await ProcessMessageContentAsync(messageBody);
 
             _logger.LogInformation($"Successfully processed message from Service Bus Topic");
         }
         catch (JsonException ex)
         {
-            _logger.LogError(ex, $"Error deserializing message: {ex.Message}. Message content: {message}");
+            _logger.LogError(ex, $"Error deserializing message. Message content: {message.Body}");
             // Don't throw for deserialization errors as retrying wouldn't help
         }
         catch (Exception ex)
@@ -56,34 +78,30 @@ public class ServiceBusTopicTriggerFunction
         }
     }
 
-    private void ProcessMessageContent(MessageModel message)
+    private async Task ProcessMessageContentAsync(MessageBody messageBody)
     {
-        // You can implement specific business logic here based on the message content
-        // For example:
-
-        // Check message priority
-        string priority = message.Header?.Properties?.Partition ?? "normal";
-        switch (priority.ToLower())
+        // Apply delay if specified in message properties (converted from seconds to milliseconds)
+        if (messageBody.DelaySec > 0)
         {
-            case "high":
-                _logger.LogInformation("Processing high priority message");
-                // Add special handling for high priority messages
-                break;
-
-            case "normal":
-                _logger.LogInformation("Processing normal priority message");
-                break;
-
-            case "low":
-                _logger.LogInformation("Processing low priority message");
-                break;
+            _logger.LogInformation($"Delaying processing for {messageBody.DelaySec} seconds as specified in message properties");
+            await Task.Delay(messageBody.DelaySec * 1000); // Convert seconds to milliseconds
         }
 
-        // You could also process messages differently based on content, subject, or recipient
-        if (!string.IsNullOrEmpty(message.MessageBody?.Content))
+        // Simplified processing using only MessageBody
+        if (!string.IsNullOrEmpty(messageBody.Content))
         {
             // Process the actual message content
-            _logger.LogInformation($"Processing message content: {message.MessageBody.Content}");
+            _logger.LogInformation($"Processing message content: {messageBody.Content}");
+            
+            if (!string.IsNullOrEmpty(messageBody.Subject))
+            {
+                _logger.LogInformation($"Message subject: {messageBody.Subject}");
+            }
+            
+            if (!string.IsNullOrEmpty(messageBody.Recipient))
+            {
+                _logger.LogInformation($"Message recipient: {messageBody.Recipient}");
+            }
         }
     }
 }

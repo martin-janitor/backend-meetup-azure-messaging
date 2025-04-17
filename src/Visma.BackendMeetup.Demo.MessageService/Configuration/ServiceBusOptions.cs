@@ -12,5 +12,5 @@ public class ServiceBusOptions
     /// <summary>
     /// The name of the Service Bus queue
     /// </summary>
-    public string QueueName { get; set; } = string.Empty;
+    public string TopicName { get; set; } = string.Empty;
 }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Text;
 using System.Text.Json;
 using Visma.BackendMeetup.Demo.MessageService.Configuration;
+using Visma.BackendMeetup.Demo.Models;
 
 namespace Visma.BackendMeetup.Demo.MessageService.Handlers;
 
@@ -29,13 +30,26 @@ public class EventHubMessageHandler
         {
             // Deserialize the message to get batch settings
             var messageModel = JsonSerializer.Deserialize<MessageModel>(message);
-            if (messageModel?.Header == null || messageModel.MessageBody == null)
+            if (messageModel?.Body == null)
             {
                 throw new ArgumentException("Invalid message format. Missing required fields.");
             }
 
-            int messageCount = messageModel.Header.MessageCount;
-            int timeoutSeconds = messageModel.Header.Timeout;
+            // Extract values from message model and properties
+            int messageCount = messageModel.MessageCount; // Use MessageCount directly
+            int timeoutSeconds = 30;
+            string? partitionKey = messageModel.MessageGroup;
+
+            // Get timeout value from Properties collection if available
+            if (messageModel.Properties != null && messageModel.Properties.Any())
+            {
+                var timeoutProperty = messageModel.Properties.FirstOrDefault(p => p.Key == "Timeout");
+                
+                if (timeoutProperty != null && int.TryParse(timeoutProperty.Value, out int timeout))
+                {
+                    timeoutSeconds = timeout;
+                }
+            }
             
             // Validate Event Hub name
             var eventHubName = !string.IsNullOrEmpty(_options.Name) 
@@ -43,7 +57,13 @@ public class EventHubMessageHandler
                 : throw new InvalidOperationException("Event Hub name is not configured");
             
             // Create a batch for sending multiple messages
-            using var eventBatch = await _eventHubClient.CreateBatchAsync();
+            CreateBatchOptions batchOptions = new CreateBatchOptions();
+            if (!string.IsNullOrEmpty(partitionKey))
+            {
+                batchOptions.PartitionKey = partitionKey;
+            }
+            
+            using var eventBatch = await _eventHubClient.CreateBatchAsync(batchOptions);
             
             // Setup cancellation token based on timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
@@ -54,37 +74,31 @@ public class EventHubMessageHandler
             try 
             {
                 // Add messages to batch based on messageCount
-                for (int i = 0; i < messageCount; i++)
+                for (int i = 0; i < messageCount && !cts.Token.IsCancellationRequested; i++)
                 {
-                    // Check for timeout
-                    if (cts.Token.IsCancellationRequested)
+                    // Create a message body with incrementing index in the content
+                    var currentMessageBody = new MessageBody
                     {
-                        _logger.LogWarning("Sending operation timed out after {seconds} seconds. Sent {count}/{total} messages.", 
-                            timeoutSeconds, sentMessageCount, messageCount);
-                        break;
-                    }
-                    
-                    // Create a message with incrementing index in the content
-                    var currentMessage = new MessageModel
-                    {
-                        Header = messageModel.Header,
-                        MessageBody = new MessageBody
-                        {
-                            Recipient = messageModel.MessageBody.Recipient,
-                            Subject = messageModel.MessageBody.Subject,
-                            Content = $"{messageModel.MessageBody.Content} (Message {i+1} of {messageCount})"
-                        }
+                        Recipient = messageModel.Body.Recipient,
+                        Subject = messageModel.Body.Subject,
+                        Content = $"{messageModel.Body.Content} (Message {i+1} of {messageCount})",
+                        DelaySec = messageModel.Body.DelaySec
                     };
                     
-                    var messageJson = JsonSerializer.Serialize(currentMessage);
-                    var eventData = new EventData(Encoding.UTF8.GetBytes(messageJson));
-                    
-                    // Add metadata as properties
-                    if (currentMessage.Header.Properties != null)
+                    // Serialize only the MessageBody part
+                    var messageBodyJson = JsonSerializer.Serialize(currentMessageBody);
+                    var eventData = new EventData(Encoding.UTF8.GetBytes(messageBodyJson));
+
+                    // Add all properties from the Properties collection
+                    if (messageModel.Properties != null)
                     {
-                        eventData.Properties.Add("content-type", currentMessage.Header.Properties.ContentType);
-                        eventData.Properties.Add("priority", currentMessage.Header.Properties.Priority);
-                        eventData.Properties.Add("timestamp", currentMessage.Header.Properties.Timestamp);
+                        foreach (var prop in messageModel.Properties)
+                        {
+                            if (!string.IsNullOrEmpty(prop.Key))
+                            {
+                                eventData.Properties.Add(prop.Key, prop.Value);
+                            }
+                        }
                     }
                     
                     // Check if batch has space for this message
@@ -92,10 +106,10 @@ public class EventHubMessageHandler
                     {
                         // Batch is full, send what we have and create a new batch
                         await _eventHubClient.SendAsync(eventBatch, cts.Token);
-                        sentMessageCount += i;
+                        sentMessageCount += eventBatch.Count;
                         
                         // Reset batch
-                        using var newBatch = await _eventHubClient.CreateBatchAsync(cts.Token);
+                        using var newBatch = await _eventHubClient.CreateBatchAsync(batchOptions, cts.Token);
                         
                         // Try again with the current message in a new batch
                         if (!newBatch.TryAdd(eventData))
@@ -103,18 +117,17 @@ public class EventHubMessageHandler
                             throw new Exception($"Message {i+1} is too large for the batch and cannot be sent.");
                         }
                         
-                        // Continue with new batch
+                        // Continue with the new batch
                         i--;  // Process this index again
                         continue;
                     }
-                    
-                    sentMessageCount++;
                 }
                 
                 // Send any remaining messages in the batch
                 if (eventBatch.Count > 0 && !cts.Token.IsCancellationRequested)
                 {
                     await _eventHubClient.SendAsync(eventBatch, cts.Token);
+                    sentMessageCount += eventBatch.Count;
                 }
                 
                 _logger.LogInformation("Successfully sent {count}/{total} messages to Event Hub.", 

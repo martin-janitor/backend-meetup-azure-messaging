@@ -2,6 +2,7 @@ using Azure.Messaging.EventGrid;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using Visma.BackendMeetup.Demo.MessageService.Configuration;
+using Visma.BackendMeetup.Demo.Models;
 
 namespace Visma.BackendMeetup.Demo.MessageService.Handlers;
 
@@ -27,13 +28,26 @@ public class EventGridMessageHandler
         {
             // Deserialize the message to get batch settings
             var messageModel = JsonSerializer.Deserialize<MessageModel>(message);
-            if (messageModel?.Header == null || messageModel.MessageBody == null)
+            if (messageModel?.Body == null)
             {
                 throw new ArgumentException("Invalid message format. Missing required fields.");
             }
 
-            int messageCount = messageModel.Header.MessageCount;
-            int timeoutSeconds = messageModel.Header.Timeout;
+            // Extract values from message model and properties
+            int messageCount = messageModel.MessageCount; // Use MessageCount directly
+            int timeoutSeconds = 30;
+            string? messageGroup = messageModel.MessageGroup;
+            
+            // Get timeout value from Properties collection if available
+            if (messageModel.Properties != null && messageModel.Properties.Any())
+            {
+                var timeoutProperty = messageModel.Properties.FirstOrDefault(p => p.Key == "Timeout");
+                
+                if (timeoutProperty != null && int.TryParse(timeoutProperty.Value, out int timeout))
+                {
+                    timeoutSeconds = timeout;
+                }
+            }
             
             // Validate Event Grid topic name if needed
             var topicName = !string.IsNullOrEmpty(_options.TopicName) 
@@ -55,29 +69,48 @@ public class EventGridMessageHandler
                 for (int i = 0; i < messageCount && !cts.Token.IsCancellationRequested; i++)
                 {
                     // Create a message with incrementing index in the content
-                    var currentMessage = new MessageModel
+                    var currentMessageBody = new MessageBody
                     {
-                        Header = messageModel.Header,
-                        MessageBody = new MessageBody
-                        {
-                            Recipient = messageModel.MessageBody.Recipient,
-                            Subject = messageModel.MessageBody.Subject,
-                            Content = $"{messageModel.MessageBody.Content} (Message {i+1} of {messageCount})"
-                        }
+                        Recipient = messageModel.Body.Recipient,
+                        Subject = messageModel.Body.Subject,
+                        Content = $"{messageModel.Body.Content} (Message {i+1} of {messageCount})",
+                        DelaySec = messageModel.Body.DelaySec
                     };
                     
-                    // Create an individual event grid event
+                    // Construct dynamic subject with message group if available
+                    string subjectPrefix = !string.IsNullOrEmpty(messageGroup) 
+                        ? $"{topicName}/{messageGroup}" 
+                        : $"{topicName}";
+                    
+                    // Create an individual event grid event (only send the MessageBody)
                     var eventGridEvent = new EventGridEvent(
-                        subject: $"{topicName}/MessagePublished/{i+1}",
+                        subject: $"{subjectPrefix}/MessagePublished/{i+1}",
                         eventType: "MessageSent",
                         dataVersion: "1.0",
-                        data: new BinaryData(JsonSerializer.Serialize(currentMessage.MessageBody)));
-                        
-                    // Add metadata to event
-                    if (currentMessage.Header.Properties != null)
+                        data: new BinaryData(JsonSerializer.Serialize(currentMessageBody)));
+                    
+                    // Add custom properties to the subject since EventGrid doesn't support custom properties directly
+                    var propertiesForSubject = new List<string>();
+                    
+                    if (messageModel.Properties != null && messageModel.Properties.Any())
                     {
-                        eventGridEvent.Subject = $"{eventGridEvent.Subject}/{currentMessage.Header.Properties.Priority}";
-                        // EventGrid doesn't support custom properties directly in the same way as EventHub
+                        foreach (var prop in messageModel.Properties)
+                        {
+                            if (!string.IsNullOrEmpty(prop.Key) && !string.IsNullOrEmpty(prop.Value))
+                            {
+                                // For important properties, add them to the subject for easier filtering
+                                if (prop.Key == "Priority" || prop.Key == "MessageType")
+                                {
+                                    propertiesForSubject.Add($"{prop.Key}={prop.Value}");
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Update subject with additional properties if any
+                    if (propertiesForSubject.Any())
+                    {
+                        eventGridEvent.Subject = $"{eventGridEvent.Subject}/{string.Join('/', propertiesForSubject)}";
                     }
                     
                     eventGridEvents.Add(eventGridEvent);

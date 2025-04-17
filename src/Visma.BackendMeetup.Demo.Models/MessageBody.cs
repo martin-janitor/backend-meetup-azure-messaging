@@ -12,4 +12,7 @@ public class MessageBody
     
     [JsonPropertyName("content")]
     public string? Content { get; set; }
+    
+    [JsonPropertyName("delaySec")]
+    public int DelaySec { get; set; } = 0;
 }

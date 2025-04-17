@@ -15,7 +15,10 @@
 
 
         public const string ServiceBusConsumerFunctionApp = "service-bus-consumer-app";
+        public const int ServiceBusConsumerFunctionAppReplicas = 2;
+
         public const string EventHubConsumerFunctionApp = "event-hub-consumer-app";
+        public const int EventHubConsumerFunctionAppReplicas = 1;
 
 
         // Port constants
