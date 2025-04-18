@@ -7,5 +7,13 @@
         "excludedTypes": "Request"
       }
     }
-  }
+  },
+  "extensions": {
+    "eventHubs": {
+      "batchCheckpointFrequency": 1,
+      "maxEventBatchSize": 1,
+      "prefetchCount": 1
+    }
+  },
+  "functionTimeout": "00:05:00"
 }

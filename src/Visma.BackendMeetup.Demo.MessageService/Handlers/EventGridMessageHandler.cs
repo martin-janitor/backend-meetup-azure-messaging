@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Azure.Messaging.EventGrid;
 using Microsoft.Extensions.Options;
-using System.Text.Json;
 using Visma.BackendMeetup.Demo.MessageService.Configuration;
 using Visma.BackendMeetup.Demo.Models;
 
@@ -37,30 +37,30 @@ public class EventGridMessageHandler
             int messageCount = messageModel.MessageCount; // Use MessageCount directly
             int timeoutSeconds = 30;
             string? messageGroup = messageModel.MessageGroup;
-            
+
             // Get timeout value from Properties collection if available
             if (messageModel.Properties != null && messageModel.Properties.Any())
             {
                 var timeoutProperty = messageModel.Properties.FirstOrDefault(p => p.Key == "Timeout");
-                
+
                 if (timeoutProperty != null && int.TryParse(timeoutProperty.Value, out int timeout))
                 {
                     timeoutSeconds = timeout;
                 }
             }
-            
+
             // Validate Event Grid topic name if needed
-            var topicName = !string.IsNullOrEmpty(_options.TopicName) 
-                ? _options.TopicName 
+            var topicName = !string.IsNullOrEmpty(_options.TopicName)
+                ? _options.TopicName
                 : "default-topic"; // Use a default or log a warning
-                
+
             // Setup cancellation token based on timeout
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-            
+
             // Track successful message count
             int sentMessageCount = 0;
 
-            try 
+            try
             {
                 // Collection for batch sending
                 var eventGridEvents = new List<EventGridEvent>();
@@ -73,25 +73,25 @@ public class EventGridMessageHandler
                     {
                         Recipient = messageModel.Body.Recipient,
                         Subject = messageModel.Body.Subject,
-                        Content = $"{messageModel.Body.Content} (Message {i+1} of {messageCount})",
+                        Content = $"{messageModel.Body.Content} (Message {i + 1} of {messageCount})",
                         DelaySec = messageModel.Body.DelaySec
                     };
-                    
+
                     // Construct dynamic subject with message group if available
-                    string subjectPrefix = !string.IsNullOrEmpty(messageGroup) 
-                        ? $"{topicName}/{messageGroup}" 
+                    string subjectPrefix = !string.IsNullOrEmpty(messageGroup)
+                        ? $"{topicName}/{messageGroup}"
                         : $"{topicName}";
-                    
+
                     // Create an individual event grid event (only send the MessageBody)
                     var eventGridEvent = new EventGridEvent(
-                        subject: $"{subjectPrefix}/MessagePublished/{i+1}",
-                        eventType: "MessageSent",
+                        subject: $"{subjectPrefix}/MessagePublished/{i + 1}",
+                        eventType: messageModel.MessageGroup,
                         dataVersion: "1.0",
                         data: new BinaryData(JsonSerializer.Serialize(currentMessageBody)));
-                    
+
                     // Add custom properties to the subject since EventGrid doesn't support custom properties directly
                     var propertiesForSubject = new List<string>();
-                    
+
                     if (messageModel.Properties != null && messageModel.Properties.Any())
                     {
                         foreach (var prop in messageModel.Properties)
@@ -106,16 +106,16 @@ public class EventGridMessageHandler
                             }
                         }
                     }
-                    
+
                     // Update subject with additional properties if any
                     if (propertiesForSubject.Any())
                     {
                         eventGridEvent.Subject = $"{eventGridEvent.Subject}/{string.Join('/', propertiesForSubject)}";
                     }
-                    
+
                     eventGridEvents.Add(eventGridEvent);
                     sentMessageCount++;
-                    
+
                     // Send in batches of 10 to avoid any size limitations
                     if (eventGridEvents.Count >= 10)
                     {
@@ -123,19 +123,19 @@ public class EventGridMessageHandler
                         eventGridEvents.Clear();
                     }
                 }
-                
+
                 // Send any remaining events
                 if (eventGridEvents.Count > 0 && !cts.Token.IsCancellationRequested)
                 {
                     await _eventGridClient.SendEventsAsync(eventGridEvents, cts.Token);
                 }
-                
-                _logger.LogInformation("Successfully sent {count}/{total} messages to Event Grid.", 
+
+                _logger.LogInformation("Successfully sent {count}/{total} messages to Event Grid.",
                     sentMessageCount, messageCount);
             }
             catch (OperationCanceledException)
             {
-                _logger.LogWarning("Sending operation was canceled after timeout of {seconds} seconds. Sent {count}/{total} messages.", 
+                _logger.LogWarning("Sending operation was canceled after timeout of {seconds} seconds. Sent {count}/{total} messages.",
                     timeoutSeconds, sentMessageCount, messageCount);
             }
         }
