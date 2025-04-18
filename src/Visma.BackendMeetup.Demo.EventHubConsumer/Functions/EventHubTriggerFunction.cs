@@ -24,12 +24,20 @@ public class EventHubTriggerFunction
             ConsumerGroup = "%EventHubConsumerGroup%")]
         EventData[] eventData)
     {
+        if (eventData == null || eventData.Length == 0)
+        {
+            _logger.LogInformation("No events received. Exiting function.");
+            return;
+        }
+
+        _logger.LogInformation($"Received batch of {eventData.Length} events from EventHub");
+
         foreach (var message in eventData)
         {
             try
             {
                 var messageText = Encoding.UTF8.GetString(message.Body.ToArray());
-                _logger.LogInformation($"EventHub message received with Partition: {message.PartitionKey}");
+                _logger.LogInformation($"EventHub message received with Partition: {message.PartitionKey}, Sequence: {message.SequenceNumber}");
 
                 // Deserialize directly to MessageBody instead of MessageModel
                 var messageBody = JsonSerializer.Deserialize<MessageBody>(messageText);
@@ -49,7 +57,19 @@ public class EventHubTriggerFunction
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing EventHub message");
+                // Enhanced error handling to capture detailed information
+                var sequenceNumber = message?.SequenceNumber.ToString() ?? "unknown";
+                var partitionId = message?.PartitionKey ?? "unknown";
+
+                _logger.LogError(ex,
+                    "Error processing EventHub message. Sequence: {SequenceNumber}, Partition: {PartitionId}, Error: {ErrorMessage}",
+                    sequenceNumber, partitionId, ex.Message);
+
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("Inner exception: {InnerException}", ex.InnerException.Message);
+                }
+
                 // Continue processing other messages in the batch
             }
         }

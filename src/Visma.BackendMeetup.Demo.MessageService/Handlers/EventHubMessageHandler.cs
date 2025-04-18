@@ -60,11 +60,11 @@ public class EventHubMessageHandler
             CreateBatchOptions batchOptions = new CreateBatchOptions();
             if (!string.IsNullOrEmpty(partitionKey))
             {
-                //batchOptions.PartitionKey = partitionKey;
+                batchOptions.PartitionKey = partitionKey;
 
-                batchOptions.PartitionId = partitionKey.EndsWith("1")
-                    ? "1"
-                    : "0";
+                //batchOptions.PartitionId = partitionKey.EndsWith("1")
+                //    ? "1"
+                //    : "0";
             }
 
             using var eventBatch = await _eventHubClient.CreateBatchAsync(batchOptions);

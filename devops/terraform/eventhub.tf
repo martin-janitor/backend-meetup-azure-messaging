@@ -9,7 +9,7 @@ resource "azurerm_eventhub" "eventhub1" {
   name                = local.eh1_name
   namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
   resource_group_name = azurerm_resource_group.messaging_rg.name
-  partition_count     = 2
+  partition_count     = 32
   message_retention   = 7     # Increased retention to 7 days for better history tracking
   capture_description {
     enabled             = true
@@ -30,7 +30,7 @@ resource "azurerm_eventhub" "eventhub2_eventgrid" {
   name                = local.eh2_eventgrid_name
   namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
   resource_group_name = azurerm_resource_group.messaging_rg.name
-  partition_count     = 2
+  partition_count     = 32
   message_retention   = 7
   capture_description {
     enabled             = true
