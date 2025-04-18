@@ -39,10 +39,6 @@ public class EventHubTriggerFunction
                     continue;
                 }
 
-                // Log key details from the message
-                _logger.LogInformation($"Message details: Subject: {messageBody.Subject}, " +
-                                     $"Recipient: {messageBody.Recipient}");
-
                 // Process the message content
                 await ProcessMessageContentAsync(messageBody);
             }
@@ -64,8 +60,9 @@ public class EventHubTriggerFunction
         // Apply delay if specified in message properties
         if (messageBody.DelaySec > 0)
         {
-            _logger.LogInformation($"Delaying processing for {messageBody.DelaySec}ms as specified in message properties");
-            await Task.Delay(messageBody.DelaySec);
+            _logger.LogInformation($"Delaying processing for {messageBody.DelaySec}sec as specified in message properties");
+            await Task.Delay(TimeSpan.FromSeconds(
+                messageBody.DelaySec));
         }
 
         // Simplified processing using only MessageBody
