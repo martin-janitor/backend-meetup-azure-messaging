@@ -6,31 +6,7 @@
         "isEnabled": true,
         "excludedTypes": "Request"
       }
-    },
-    "logLevel": {
-      "default": "Information",
-      "Host": "Information",
-      "Host.General": "Information",
-      "Host.Aggregator": "Information",
-      "Host.Results": "Information",
-      "Host.Triggers": "Information",
-      "Host.Triggers.ServiceBus": "Information",
-      "Function": "Information",
-      "Function.ProcessTopicMessage": "Information",
-      "Microsoft": "Information",
-      "Microsoft.Azure": "Information",
-      "Microsoft.Azure.WebJobs": "Information",
-      "Microsoft.Azure.Functions": "Information",
-      "Azure": "Information",
-      "Worker": "Information",
-      "Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions": "Information",
-      "Visma.BackendMeetup.Demo.ServiceBusConsumer.Functions.ServiceBusTopicTriggerFunction": "Information"
-    },
-    "console": {
-      "isEnabled": true,
-      "DisableColors": false
-    },
-    "fileLoggingMode": "never"
+    }
   },
   "extensions": {
     "serviceBus": {
