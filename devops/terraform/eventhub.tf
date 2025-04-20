@@ -31,7 +31,7 @@ resource "azurerm_eventhub" "eventhub2_eventgrid" {
   namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
   resource_group_name = azurerm_resource_group.messaging_rg.name
   partition_count     = 32
-  message_retention   = 7
+  message_retention   = 7  
   capture_description {
     enabled             = true
     encoding            = "Avro"
@@ -56,6 +56,14 @@ resource "azurerm_eventhub_consumer_group" "backend_meetup_consumer" {
 resource "azurerm_eventhub_consumer_group" "eventgrid_consumer" {
   name                = "eventgrid-consumer"
   eventhub_name       = azurerm_eventhub.eventhub2_eventgrid.name
+  namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
+  resource_group_name = azurerm_resource_group.messaging_rg.name
+}
+
+# Consumer group for retrieving messages by enqueue time
+resource "azurerm_eventhub_consumer_group" "enqueue_time_consumer" {
+  name                = local.enqueue_time_consumer_name
+  eventhub_name       = azurerm_eventhub.eventhub1.name
   namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
   resource_group_name = azurerm_resource_group.messaging_rg.name
 }

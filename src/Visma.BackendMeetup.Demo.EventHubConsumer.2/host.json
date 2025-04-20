@@ -12,11 +12,7 @@
     "eventHubs": {
       "batchCheckpointFrequency": 1,
       "maxEventBatchSize": 1,
-      "prefetchCount": 1,
-      "initialOffsetOptions": {
-        "type": "fromEnd"
-      }
-      
+      "prefetchCount": 1
     }
   },
   "functionTimeout": "00:05:00"

@@ -1,5 +1,7 @@
+using Azure.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Azure;
+using Visma.BackendMeetup.Demo.MessageService.Clients;
 using Visma.BackendMeetup.Demo.MessageService.Configuration;
 using Visma.BackendMeetup.Demo.MessageService.Handlers;
 
@@ -18,6 +20,9 @@ builder.Services.Configure<EventGridOptions>(
     builder.Configuration.GetSection(EventGridOptions.EventGrid));
 builder.Services.Configure<ServiceBusOptions>(
     builder.Configuration.GetSection(ServiceBusOptions.ServiceBus));
+
+// Register Azure default credential for dependency injection
+builder.Services.AddSingleton<TokenCredential>(sp => new DefaultAzureCredential());
 
 // Add Azure clients with RBAC authentication
 builder.Services.AddAzureClients(clientBuilder =>
@@ -53,6 +58,8 @@ builder.Services.AddAzureClients(clientBuilder =>
 builder.Services.AddSingleton<EventHubMessageHandler>();
 builder.Services.AddSingleton<EventGridMessageHandler>();
 builder.Services.AddSingleton<ServiceBusMessageHandler>();
+builder.Services.AddSingleton<EventHubReceiverClient>();
+builder.Services.AddSingleton<EventHubReceiveMessageHandler>();
 
 var app = builder.Build();
 
@@ -61,6 +68,17 @@ app.MapDefaultEndpoints();
 app.MapGet("/", () => "Hello Backend Meetup!")
     .WithName("GetHelloWorld")
     .Produces<string>(StatusCodes.Status200OK);
+
+// Add endpoint for retrieving messages by enqueue time
+app.MapGet("/messages/by-enqueue-time", async (
+    DateTime startTime,
+    DateTime? endTime,
+    int? maxMessages,
+    string? partitionId,
+    EventHubReceiveMessageHandler handler,
+    CancellationToken cancellationToken) =>
+    await handler.GetMessagesByEnqueueTimeAsync(startTime, endTime, maxMessages, partitionId, cancellationToken));
+
 
 // Updated to handle JSON message with batch processing
 app.MapPost("/publish/eventhub", async (HttpRequest request, EventHubMessageHandler handler) =>

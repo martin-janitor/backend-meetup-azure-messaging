@@ -22,22 +22,42 @@ public class EventHubTriggerFunction
             "%EventHubName%",
             Connection = "EventHubConnection",
             ConsumerGroup = "%EventHubConsumerGroup%")]
-        EventData[] eventData)
+        EventData[] eventData,
+        FunctionContext context)
     {
+        // Get the partition ID from function context metadata
+        string partitionId = "unknown";
+        if (context.BindingContext.BindingData.TryGetValue("PartitionContext", out var partitionContextValue))
+        {
+            try
+            {
+                // Parse the JSON string to get just the PartitionId
+                var partitionContext = JsonSerializer.Deserialize<JsonElement>(partitionContextValue.ToString());
+                if (partitionContext.TryGetProperty("PartitionId", out var partitionIdValue))
+                {
+                    partitionId = partitionIdValue.GetString();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"Error parsing PartitionContext: {ex.Message}");
+            }
+        }
+
         if (eventData == null || eventData.Length == 0)
         {
             _logger.LogInformation("No events received. Exiting function.");
             return;
         }
 
-        _logger.LogInformation($"Received batch of {eventData.Length} events from EventHub");
+        _logger.LogInformation($"Received batch of {eventData.Length} events from EventHub on Partition: {partitionId}");
 
         foreach (var message in eventData)
         {
             try
             {
                 var messageText = Encoding.UTF8.GetString(message.Body.ToArray());
-                _logger.LogInformation($"EventHub message received with Partition: {message.PartitionKey}, Sequence: {message.SequenceNumber}");
+                _logger.LogInformation($"EventHub message received on Partition: {partitionId}, Sequence: {message.SequenceNumber}");
 
                 // Deserialize directly to MessageBody instead of MessageModel
                 var messageBody = JsonSerializer.Deserialize<MessageBody>(messageText);
@@ -59,7 +79,6 @@ public class EventHubTriggerFunction
             {
                 // Enhanced error handling to capture detailed information
                 var sequenceNumber = message?.SequenceNumber.ToString() ?? "unknown";
-                var partitionId = message?.PartitionKey ?? "unknown";
 
                 _logger.LogError(ex,
                     "Error processing EventHub message. Sequence: {SequenceNumber}, Partition: {PartitionId}, Error: {ErrorMessage}",
