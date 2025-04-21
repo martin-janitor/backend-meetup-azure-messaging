@@ -57,7 +57,7 @@ public class EventHubTriggerFunction
             try
             {
                 var messageText = Encoding.UTF8.GetString(message.Body.ToArray());
-                _logger.LogInformation($"EventHub message received on Partition: {partitionId}, Sequence: {message.SequenceNumber}");
+                _logger.LogInformation($"EventHub message received on Partition: {partitionId}, Sequence: {message.SequenceNumber}, PartitionKey: {message.PartitionKey}");
 
                 // Deserialize directly to MessageBody instead of MessageModel
                 var messageBody = JsonSerializer.Deserialize<MessageBody>(messageText);

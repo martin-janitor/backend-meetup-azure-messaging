@@ -12,10 +12,18 @@ resource "azurerm_eventgrid_event_subscription" "to_servicebus_topic_eventgrid" 
   
   # Use dynamic delivery properties that will extract values from the subject  
   delivery_property {
-    header_name = "GroupId"
+    header_name = "SessionId"
     type        = "Dynamic"
-    source_field = "eventType" 
+    source_field = "data.properties.groupId"
     secret      = false
+  }
+ 
+   # Filter for high priority messages
+  advanced_filter {
+    string_in {
+      key    = "data.properties.priority"
+      values = ["high"]
+    }
   }
 }
 
@@ -27,10 +35,18 @@ resource "azurerm_eventgrid_event_subscription" "to_eventhub_eventgrid" {
   
   # Use dynamic delivery properties that will extract values from the subject  
   delivery_property {
-    header_name = "GroupId"
+    header_name = "PartitionKey"
     type        = "Dynamic"
-    source_field = "eventType"
+    source_field = "data.properties.groupId"
     secret      = false
+  }
+ 
+  # Filter for high priority messages
+  advanced_filter {
+    string_in {
+      key    = "data.properties.priority"
+      values = ["high"]
+    }
   }
 }
 

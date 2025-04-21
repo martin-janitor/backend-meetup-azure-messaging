@@ -82,36 +82,37 @@ public class EventGridMessageHandler
                         ? $"{topicName}/{messageGroup}"
                         : $"{topicName}";
 
-                    // Create an individual event grid event (only send the MessageBody)
-                    var eventGridEvent = new EventGridEvent(
-                        subject: $"{subjectPrefix}/MessagePublished/{i + 1}",
-                        eventType: messageModel.MessageGroup,
-                        dataVersion: "1.0",
-                        data: new BinaryData(JsonSerializer.Serialize(currentMessageBody)));
-
-                    // Add custom properties to the subject since EventGrid doesn't support custom properties directly
-                    var propertiesForSubject = new List<string>();
-
+                    // Extract properties into a dictionary for data payload
+                    var propertiesDict = new Dictionary<string, string>();
                     if (messageModel.Properties != null && messageModel.Properties.Any())
                     {
                         foreach (var prop in messageModel.Properties)
                         {
                             if (!string.IsNullOrEmpty(prop.Key) && !string.IsNullOrEmpty(prop.Value))
                             {
-                                // For important properties, add them to the subject for easier filtering
-                                if (prop.Key == "Priority" || prop.Key == "MessageType")
-                                {
-                                    propertiesForSubject.Add($"{prop.Key}={prop.Value}");
-                                }
+                                propertiesDict[prop.Key] = prop.Value;
                             }
                         }
                     }
 
-                    // Update subject with additional properties if any
-                    if (propertiesForSubject.Any())
+                    // Create a composite data object that includes both the message body and properties
+                    var eventData = new
                     {
-                        eventGridEvent.Subject = $"{eventGridEvent.Subject}/{string.Join('/', propertiesForSubject)}";
-                    }
+                        message = currentMessageBody,
+                        // Include properties at the root level for easy access
+                        groupId = propertiesDict.ContainsKey("groupId") ? propertiesDict["groupId"] : "",
+                        priority = propertiesDict.ContainsKey("Priority") ? propertiesDict["Priority"] : "",
+                        messageType = propertiesDict.ContainsKey("MessageType") ? propertiesDict["MessageType"] : "",
+                        // Also include all properties as a dictionary
+                        properties = propertiesDict
+                    };
+
+                    // Create an individual event grid event with the composite data
+                    var eventGridEvent = new EventGridEvent(
+                        subject: $"{subjectPrefix}/MessagePublished/{i + 1}",
+                        eventType: messageGroup ?? "MessagePublished",
+                        dataVersion: "1.0",
+                        data: new BinaryData(JsonSerializer.Serialize(eventData)));
 
                     eventGridEvents.Add(eventGridEvent);
                     sentMessageCount++;
