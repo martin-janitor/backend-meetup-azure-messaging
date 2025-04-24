@@ -46,6 +46,16 @@ resource "azurerm_eventhub" "eventhub2_eventgrid" {
   }
 }
 
+# Third Event Hub for Replication
+resource "azurerm_eventhub" "eventhub3_replication" {
+  name                = local.eh3_replication_name
+  namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
+  resource_group_name = azurerm_resource_group.messaging_rg.name
+  partition_count     = 32
+  message_retention   = 7  
+  # No capture configuration for the replication event hub
+}
+
 resource "azurerm_eventhub_consumer_group" "backend_meetup_consumer" {
   name                = "backend-meetup-consumer"
   eventhub_name       = azurerm_eventhub.eventhub1.name
@@ -56,6 +66,14 @@ resource "azurerm_eventhub_consumer_group" "backend_meetup_consumer" {
 resource "azurerm_eventhub_consumer_group" "eventgrid_consumer" {
   name                = "eventgrid-consumer"
   eventhub_name       = azurerm_eventhub.eventhub2_eventgrid.name
+  namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
+  resource_group_name = azurerm_resource_group.messaging_rg.name
+}
+
+# Consumer group for replication
+resource "azurerm_eventhub_consumer_group" "replication_consumer" {
+  name                = "consumer-replication"
+  eventhub_name       = azurerm_eventhub.eventhub3_replication.name
   namespace_name      = azurerm_eventhub_namespace.eventhub_ns.name
   resource_group_name = azurerm_resource_group.messaging_rg.name
 }

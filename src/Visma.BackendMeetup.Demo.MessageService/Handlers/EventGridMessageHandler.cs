@@ -98,7 +98,7 @@ public class EventGridMessageHandler
                     // Create a composite data object that includes both the message body and properties
                     var eventData = new
                     {
-                        message = currentMessageBody,
+                        body = currentMessageBody,
                         // Include properties at the root level for easy access
                         groupId = propertiesDict.ContainsKey("groupId") ? propertiesDict["groupId"] : "",
                         priority = propertiesDict.ContainsKey("Priority") ? propertiesDict["Priority"] : "",
@@ -121,6 +121,7 @@ public class EventGridMessageHandler
                     if (eventGridEvents.Count >= 10)
                     {
                         await _eventGridClient.SendEventsAsync(eventGridEvents, cts.Token);
+
                         eventGridEvents.Clear();
                     }
                 }

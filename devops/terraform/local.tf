@@ -7,6 +7,7 @@ locals {
   eh_ns_name                 = "eh-ns-backend-meetup"
   eh1_name                   = "eh-backend-meetup-first"
   eh2_eventgrid_name         = "eh-eventgrid-backend-meetup"
+  eh3_replication_name       = "eh-replication-backend-meetup"
   eg_topic_name              = "eg-topic-backend-meetup"
   sub1_name                  = "sub1-backend-meetup"
   sub3_name                  = "sub3-eventgrid-topic-backend-meetup"

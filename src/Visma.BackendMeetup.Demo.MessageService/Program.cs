@@ -20,6 +20,8 @@ builder.Services.Configure<EventGridOptions>(
     builder.Configuration.GetSection(EventGridOptions.EventGrid));
 builder.Services.Configure<ServiceBusOptions>(
     builder.Configuration.GetSection(ServiceBusOptions.ServiceBus));
+builder.Services.Configure<EventGridEventHubOptions>(
+    builder.Configuration.GetSection(EventGridEventHubOptions.EventGridEventHub));
 
 // Register Azure default credential for dependency injection
 builder.Services.AddSingleton<TokenCredential>(sp => new DefaultAzureCredential());
@@ -31,6 +33,7 @@ builder.Services.AddAzureClients(clientBuilder =>
     var serviceBusOptions = builder.Configuration.GetSection(ServiceBusOptions.ServiceBus).Get<ServiceBusOptions>();
     var eventHubOptions = builder.Configuration.GetSection(EventHubOptions.EventHub).Get<EventHubOptions>();
     var eventGridOptions = builder.Configuration.GetSection(EventGridOptions.EventGrid).Get<EventGridOptions>();
+    var eventGridEventHubOptions = builder.Configuration.GetSection(EventGridEventHubOptions.EventGridEventHub).Get<EventGridEventHubOptions>();
 
     if (serviceBusOptions?.FullyQualifiedNamespace != null)
     {
@@ -60,6 +63,8 @@ builder.Services.AddSingleton<EventGridMessageHandler>();
 builder.Services.AddSingleton<ServiceBusMessageHandler>();
 builder.Services.AddSingleton<EventHubReceiverClient>();
 builder.Services.AddSingleton<EventHubReceiveMessageHandler>();
+builder.Services.AddSingleton<EventGridEventHubReceiverClient>();
+builder.Services.AddSingleton<EventGridEventHubReceiveMessageHandler>();
 
 var app = builder.Build();
 
@@ -79,6 +84,19 @@ app.MapGet("/messages/by-enqueue-time", async (
     CancellationToken cancellationToken) =>
     await handler.GetMessagesByEnqueueTimeAsync(startTime, endTime, maxMessages, partitionId, cancellationToken));
 
+// Add endpoint for retrieving messages from EventGrid Event Hub
+app.MapGet("/messages/from-eventgrid", async (
+    DateTime? startTime,
+    DateTime? endTime,
+    int? maxMessages,
+    string? partitionId,
+    EventGridEventHubReceiveMessageHandler handler,
+    CancellationToken cancellationToken) =>
+    await handler.GetMessagesFromEventGridAsync(startTime, endTime, maxMessages, partitionId, cancellationToken))
+    .WithName("GetMessagesFromEventGrid")
+    .Produces<List<Visma.BackendMeetup.Demo.Models.EventGrid.EventGridEventHubEnvelope>>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status400BadRequest)
+    .Produces(StatusCodes.Status500InternalServerError);
 
 // Updated to handle JSON message with batch processing
 app.MapPost("/publish/eventhub", async (HttpRequest request, EventHubMessageHandler handler) =>
