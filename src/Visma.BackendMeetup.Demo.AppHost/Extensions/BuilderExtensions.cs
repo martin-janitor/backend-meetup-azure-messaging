@@ -18,17 +18,10 @@ namespace Visma.BackendMeetup.Demo.AppHost.Extensions
                 .WithHostStorage(azureStorage)
                 .WaitFor(azureStorage);
 
-            var serviceBusFuctionApp2 = builder.AddAzureFunctionsProject<Projects.Visma_BackendMeetup_Demo_ServiceBusConsumer__2>(
-              $"{ServiceBusConsumerFunctionApp}-2")
-               .WithHostStorage(azureStorage)
-               .WaitFor(azureStorage);
-
             foreach (var mock in mockResourceList)
             {
                 serviceBusFuctionApp.WithReference(mock);
                 serviceBusFuctionApp.WaitFor(mock);
-                serviceBusFuctionApp2.WithReference(mock);
-                serviceBusFuctionApp2.WaitFor(mock);
             }
 
             var eventHubFuctionApp = builder.AddAzureFunctionsProject<Projects.Visma_BackendMeetup_Demo_EventHubConsumer>(
@@ -36,17 +29,12 @@ namespace Visma.BackendMeetup.Demo.AppHost.Extensions
                 .WithHostStorage(azureStorage)
                 .WaitFor(azureStorage);
 
-            var eventHubFuctionApp2 = builder.AddAzureFunctionsProject<Projects.Visma_BackendMeetup_Demo_EventHubConsumer__2>(
-               $"{EventHubConsumerFunctionApp}-2")
-                .WithHostStorage(azureStorage)
-                .WaitFor(azureStorage);
+
 
             foreach (var mock in mockResourceList)
             {
                 eventHubFuctionApp.WithReference(mock);
                 eventHubFuctionApp.WaitFor(mock);
-                eventHubFuctionApp2.WithReference(mock);
-                eventHubFuctionApp2.WaitFor(mock);
             }
 
 
