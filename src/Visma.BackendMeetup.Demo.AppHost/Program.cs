@@ -9,7 +9,7 @@ var azureStorage = builder.BuildAzureStorage();
 var mockList = builder.BuildMockServices();
 
 
-builder.BuildP2DIFunctionApp(
+builder.BuildFunctionApps(
     azureStorage: azureStorage,
     configuration: builder.Configuration,
     mockResourceList: mockList);

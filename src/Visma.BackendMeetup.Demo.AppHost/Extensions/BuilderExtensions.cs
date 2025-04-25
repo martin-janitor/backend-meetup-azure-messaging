@@ -5,7 +5,7 @@ namespace Visma.BackendMeetup.Demo.AppHost.Extensions
 {
     public static class BuilderExtensions
     {
-        public static IDistributedApplicationBuilder BuildP2DIFunctionApp(
+        public static IDistributedApplicationBuilder BuildFunctionApps(
             this IDistributedApplicationBuilder builder,
             IConfiguration configuration,
             IResourceBuilder<AzureStorageResource> azureStorage,
